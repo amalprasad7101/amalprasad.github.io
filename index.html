@@ -1019,8 +1019,38 @@
 
     // --- 5. RUBIK'S CUBE ---
     const rubiksGroup = new THREE.Group();
-    rubiksGroup.position.set(0, 4.2, 0);
+    rubiksGroup.position.set(0, 4.8, 0);
+    rubiksGroup.scale.set(1.1, 1.1, 1.1);
     scene.add(rubiksGroup);
+
+    // Glowing background aura texture & sprite
+    function createAuraTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+      grad.addColorStop(0, 'rgba(255, 213, 0, 0.85)');    // Warm gold core (#FFD500)
+      grad.addColorStop(0.4, 'rgba(136, 192, 87, 0.55)');  // Soft green mid (#88C057)
+      grad.addColorStop(0.75, 'rgba(136, 192, 87, 0.15)'); // Outer soft glow
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 256, 256);
+
+      const texture = new THREE.CanvasTexture(c);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    const auraMat = new THREE.SpriteMaterial({
+      map: createAuraTexture(),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const auraSprite = new THREE.Sprite(auraMat);
+    auraSprite.scale.set(7.5, 7.5, 1.0);
+    rubiksGroup.add(auraSprite);
 
     const faceHexColors = ['#C41E3A', '#FF5800', '#FFFFFF', '#FFD500', '#009E60', '#0051BA'];
     const subCubeGeo = new THREE.BoxGeometry(0.94, 0.94, 0.94);
@@ -1293,10 +1323,10 @@
 
     function dispatchJohnToCube(normal, domain) {
       resetStandPose();
-      const standDistance = 4.2;
+      const standDistance = 4.5;
       targetPos.set(normal.x * standDistance, 0, normal.z * standDistance);
       if (Math.abs(normal.y) > 0.7) {
-        targetPos.set(2.8, 0, 3.2);
+        targetPos.set(3.0, 0, 3.4);
       }
       pendingDomain = domain;
       charState = 'WALKING_TO_CUBE';
@@ -1316,10 +1346,18 @@
         if (cloud.position.x > 35) cloud.position.x = -35;
       });
 
-      // Gentle floating animation
+      // Gentle floating animation & idle auto-rotation
       if (!isMouseDragging && !isTouchDragging) {
-        rubiksGroup.position.y = 4.2 + Math.sin(time * 1.5) * 0.12;
+        rubiksGroup.position.y = 4.8 + Math.sin(time * 1.5) * 0.12;
+        rubiksGroup.rotation.y += 0.003;
+        rubiksGroup.rotation.x += 0.001;
       }
+
+      // Aura pulse animation
+      const auraPulse = Math.sin(time * 2.5);
+      const auraScale = 7.5 + auraPulse * 0.5;
+      auraSprite.scale.set(auraScale, auraScale, 1.0);
+      auraMat.opacity = 0.75 + auraPulse * 0.15;
 
       // John State Machine Logic
       if (charState === 'WALKING_TO_CUBE') {
