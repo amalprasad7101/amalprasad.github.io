@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amal Prasad | Senior Odoo Architect & Techno-Functional Consultant</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #EAE6DF;
+      --surface: #F5F2EB;
+      --card-bg: rgba(255, 255, 255, 0.96);
+      --border: #4A3E3D;
+      --shadow: #2A2421;
+      --text: #1E232A;
+      --text-muted: #555E68;
+      --green: #4E8752;
+      --green-dark: #3B6B22;
+      --accent: #E76F51;
+      --blue: #2A3D8F;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* === SECTION 1: 3D HERO CANVAS === */
+    #hero-section {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top HUD / Header */
+    .hud-header {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .hud-badge {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.65rem;
+      background: #88C057;
+      color: #1a3311;
+      border: 3px solid var(--green-dark);
+      padding: 0.4rem 0.6rem;
+      box-shadow: 3px 3px 0px rgba(0,0,0,0.15);
+      display: inline-block;
+      margin-bottom: 0.6rem;
+    }
+    .hud-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.25rem;
+      color: #2F3E46;
+      text-shadow: 2px 2px 0px #fff;
+    }
+    .hud-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      font-weight: 600;
+    }
+
+    /* Controls Hint Bar */
+    .instructions-bar {
+      position: absolute;
+      bottom: 4.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      box-shadow: 4px 4px 0px var(--shadow);
+      padding: 0.6rem 1.2rem;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.65rem;
+      color: var(--text);
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      gap: 1.2rem;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .instructions-bar span { color: var(--green); }
+
+    /* Scroll Prompt Indicator */
+    .scroll-hint {
+      position: absolute;
+      bottom: 1.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem;
+      color: var(--text);
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      box-shadow: 2px 2px 0px var(--shadow);
+      z-index: 10;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .scroll-hint:hover {
+      transform: translateX(-50%) translateY(-2px);
+      background: #fff;
+    }
+
+    /* Domain Namecard Modal (Auto-closes in 5s) */
+    .domain-card {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      width: 370px;
+      max-width: calc(100vw - 4rem);
+      background: var(--card-bg);
+      border: 4px solid var(--border);
+      box-shadow: 6px 6px 0px var(--shadow);
+      padding: 1.25rem;
+      z-index: 20;
+      transform: translateX(130%);
+      transition: transform 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      pointer-events: auto;
+    }
+    .domain-card.active { transform: translateX(0); }
+    .card-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: var(--accent);
+      border: 2px solid var(--border);
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-tag {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.55rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 0.85rem;
+    }
+    .card-block-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.55rem;
+      color: var(--text);
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .card-stack {
+      font-size: 0.8rem;
+      background: #EFE9DB;
+      border: 2px solid #D6CEBE;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      color: #2F3E46;
+      font-weight: 600;
+    }
+    .card-timer-bar {
+      height: 4px;
+      background: var(--green);
+      margin-top: 0.8rem;
+      width: 100%;
+      transform-origin: left;
+    }
+    .card-timer-bar.running {
+      animation: timerCountdown 5s linear forwards;
+    }
+    @keyframes timerCountdown {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0); }
+    }
+
+    /* === SECTION 2: DOSSIER & CREDENTIALS PAGE === */
+    #profile-section {
+      background-color: var(--surface);
+      border-top: 6px solid var(--border);
+      padding: 4rem 1.5rem 6rem;
+      min-height: 100vh;
+      user-select: text;
+    }
+    .profile-container {
+      max-width: 1050px;
+      margin: 0 auto;
+    }
+
+    .section-header-block {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+    .section-pixel-badge {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.65rem;
+      background: var(--green);
+      color: #fff;
+      border: 3px solid var(--border);
+      box-shadow: 3px 3px 0px var(--shadow);
+      padding: 0.4rem 0.8rem;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+    .section-main-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.6rem;
+      color: var(--text);
+      margin-bottom: 0.8rem;
+    }
+    .section-subtext {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 780px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 3rem;
+    }
+    .metric-box {
+      background: #fff;
+      border: 3px solid var(--border);
+      box-shadow: 4px 4px 0px var(--shadow);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .metric-value {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.7rem;
+      color: var(--green-dark);
+      margin-bottom: 0.5rem;
+    }
+    .metric-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Bento Grid */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    @media (max-width: 820px) {
+      .bento-grid { grid-template-columns: 1fr; }
+    }
+
+    .bento-card {
+      background: #fff;
+      border: 3px solid var(--border);
+      box-shadow: 5px 5px 0px var(--shadow);
+      padding: 1.75rem;
+    }
+    .bento-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+      border-bottom: 2px dashed #D6CEBE;
+      padding-bottom: 0.8rem;
+    }
+    .bento-icon {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.8rem;
+      background: #EFE9DB;
+      border: 2px solid var(--border);
+      padding: 0.35rem 0.5rem;
+    }
+    .bento-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .cert-badge-box {
+      background: #FDFBF7;
+      border: 2px solid var(--green);
+      border-left: 6px solid var(--green);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .cert-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+    .cert-issuer {
+      font-size: 0.85rem;
+      color: var(--green-dark);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .cert-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .skill-category {
+      margin-bottom: 1rem;
+    }
+    .skill-cat-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--blue);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .pill-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .pixel-pill {
+      font-size: 0.8rem;
+      background: #EFE9DB;
+      border: 1px solid #D6CEBE;
+      padding: 0.25rem 0.55rem;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+
+    /* Career Timeline */
+    .timeline-card {
+      background: #fff;
+      border: 3px solid var(--border);
+      box-shadow: 5px 5px 0px var(--shadow);
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+    .timeline-item {
+      position: relative;
+      padding-left: 1.8rem;
+      margin-bottom: 2rem;
+      border-left: 3px solid #D6CEBE;
+    }
+    .timeline-item:last-child {
+      margin-bottom: 0;
+      border-left-color: transparent;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -9px;
+      top: 0;
+      width: 15px;
+      height: 15px;
+      background: var(--green);
+      border: 2px solid var(--border);
+    }
+    .timeline-role {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .timeline-company {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 0.2rem;
+    }
+    .timeline-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+    .timeline-bullets {
+      list-style-type: square;
+      padding-left: 1.2rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .timeline-bullets li { margin-bottom: 0.4rem; }
+
+    /* Education */
+    .edu-card {
+      background: #fff;
+      border: 3px solid var(--border);
+      box-shadow: 5px 5px 0px var(--shadow);
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+    .edu-row {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      align-items: center;
+    }
+
+    /* Footer / CTA Banner */
+    .cta-banner {
+      background: #2F3E46;
+      color: #fff;
+      border: 3px solid var(--border);
+      box-shadow: 6px 6px 0px var(--shadow);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+    .cta-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.1rem;
+      margin-bottom: 0.8rem;
+      color: #88C057;
+    }
+    .cta-text {
+      font-size: 0.95rem;
+      color: #CAD2C5;
+      max-width: 620px;
+      margin: 0 auto 1.75rem;
+      line-height: 1.5;
+    }
+    .cta-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .cta-btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.65rem;
+      padding: 0.85rem 1.4rem;
+      border: 3px solid var(--border);
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s ease;
+    }
+    .cta-btn:hover { transform: translate(-2px, -2px); }
+    .cta-btn-primary { background: #88C057; color: #1a3311; }
+    .cta-btn-secondary { background: #EAE6DF; color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <!-- ================= SECTION 1: 3D MINECRAFT HERO ================= -->
+  <section id="hero-section">
+    <div class="hud-header">
+      <div class="hud-badge">LVL 5+ ODOO ARCHITECT • v13 - v19</div>
+      <div class="hud-title">AMAL PRASAD</div>
+      <div class="hud-subtitle">Techno-Functional Consultant • Odoo 17 Certified</div>
+    </div>
+
+    <div class="instructions-bar">
+      <div><span>[DRAG]</span> ROTATE CUBE</div>
+      <div><span>[CLICK FACE / ICON]</span> JOHN INSPECTS DOMAIN</div>
+    </div>
+
+    <a href="#profile-section" class="scroll-hint">
+      ▼ SCROLL TO DOSSIER & CERTS
+    </a>
+
+    <!-- Domain Card Toast -->
+    <div class="domain-card" id="domainCard">
+      <button class="card-close" id="cardClose">X</button>
+      <div class="card-tag" id="cardTag">Logistics Vertical</div>
+      <div class="card-title" id="cardTitle">Domain Name</div>
+      <div class="card-desc" id="cardDesc">Description of architectural solution and business impact.</div>
+      <div class="card-block-title">Key Frameworks & Tech</div>
+      <div class="card-stack" id="cardStack">Odoo Modules & Architecture</div>
+      <div class="card-timer-bar" id="cardTimer"></div>
+    </div>
+
+    <canvas id="webgl-canvas"></canvas>
+  </section>
+
+  <!-- ================= SECTION 2: PROFILE DOSSIER & CERTIFICATIONS ================= -->
+  <section id="profile-section">
+    <div class="profile-container">
+
+      <div class="section-header-block">
+        <div class="section-pixel-badge">CREDENTIALS & ARCHITECTURE</div>
+        <h2 class="section-main-title">PROFILE OVERVIEW</h2>
+        <p class="section-subtext">
+          Certified Odoo 17 Techno-Functional Consultant with 5+ years of experience across Odoo 13 through Odoo 19. Specialized in translating complex business processes into scalable Python and PostgreSQL enterprise architectures.
+        </p>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-value">5+</div>
+          <div class="metric-title">Years Experience</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value">20+</div>
+          <div class="metric-title">Deployments Delivered</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value">1.5M+</div>
+          <div class="metric-title">Records Analyzed</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value">99.9%</div>
+          <div class="metric-title">Production Uptime</div>
+        </div>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Certification -->
+        <div class="bento-card">
+          <div class="bento-header">
+            <div class="bento-icon">★</div>
+            <h3 class="bento-title">CERTIFICATIONS</h3>
+          </div>
+          <div class="cert-badge-box">
+            <div class="cert-name">Odoo 17 Functional Consultant</div>
+            <div class="cert-issuer">Official Odoo S.A. Certification</div>
+            <div class="cert-desc">
+              Validated functional mastery across core enterprise business suites: Financial Accounting, Inventory & WMS, Discrete Manufacturing (MRP), Purchase, Sales, and Supply Chain.
+            </div>
+          </div>
+          <div class="cert-badge-box" style="border-color: #D6CEBE; border-left-color: var(--blue);">
+            <div class="cert-name">Smart India Hackathon</div>
+            <div class="cert-issuer">National Level Participant</div>
+            <div class="cert-desc">
+              National finalist building high-throughput algorithmic solutions for complex real-world operational bottlenecks.
+            </div>
+          </div>
+        </div>
+
+        <!-- Technical Stack -->
+        <div class="bento-card">
+          <div class="bento-header">
+            <div class="bento-icon">⚙</div>
+            <h3 class="bento-title">TECHNICAL STACK</h3>
+          </div>
+
+          <div class="skill-category">
+            <div class="skill-cat-title">Odoo Ecosystem (v13 to v19)</div>
+            <div class="pill-cloud">
+              <span class="pixel-pill">Odoo 13 - 19</span>
+              <span class="pixel-pill">Odoo ORM</span>
+              <span class="pixel-pill">OWL Framework</span>
+              <span class="pixel-pill">QWeb Reports</span>
+              <span class="pixel-pill">Odoo.sh</span>
+              <span class="pixel-pill">Odoo Studio</span>
+            </div>
+          </div>
+
+          <div class="skill-category">
+            <div class="skill-cat-title">Backend & Database Engineering</div>
+            <div class="pill-cloud">
+              <span class="pixel-pill">Python (Advanced)</span>
+              <span class="pixel-pill">PostgreSQL Tuning</span>
+              <span class="pixel-pill">REST APIs</span>
+              <span class="pixel-pill">JSON-RPC</span>
+              <span class="pixel-pill">Schema Migrations</span>
+            </div>
+          </div>
+
+          <div class="skill-category">
+            <div class="skill-cat-title">DevOps & Cloud Systems</div>
+            <div class="pill-cloud">
+              <span class="pixel-pill">AWS</span>
+              <span class="pixel-pill">Azure</span>
+              <span class="pixel-pill">Docker</span>
+              <span class="pixel-pill">Linux / Ubuntu</span>
+              <span class="pixel-pill">Git / CI/CD</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Experience -->
+      <div class="timeline-card">
+        <div class="bento-header" style="margin-bottom: 2rem;">
+          <div class="bento-icon">◆</div>
+          <h3 class="bento-title">PROFESSIONAL EXPERIENCE</h3>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-role">Senior Software Engineer & Enterprise Odoo Architect</div>
+          <div class="timeline-company">Enterprise Logistics & Hyperlocal Quick-Commerce Ecosystem</div>
+          <div class="timeline-date">2024 – Present | Trivandrum, India</div>
+          <ul class="timeline-bullets">
+            <li>Lead techno-functional architecture and core ERP engineering supporting high-concurrency hyperlocal delivery, fleet tracking, and dark store platforms.</li>
+            <li>Architected custom Fleet Management ERP modules for vehicle lifecycles, fuel consumption analytics, maintenance dispatch, and automated operational expense accounting.</li>
+            <li>Constructed backend pipelines for dark store micro-fulfillment, automating multi-location stock synchronization, threshold replenishment, and wave/batch picking.</li>
+            <li>Delivered external client ERP deployments for discrete manufacturing (multi-level BOM, routings) and wholesale hardware distribution with 99.9% uptime.</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-role">Odoo Techno-Functional Consultant & Module Lead</div>
+          <div class="timeline-company">Global Odoo Gold Partner & ERP Consultancy Firm</div>
+          <div class="timeline-date">2021 – 2024 | Calicut, India</div>
+          <ul class="timeline-bullets">
+            <li>Directed engineering squads of ~10 software developers, successfully delivering 20+ enterprise Odoo implementations across manufacturing, wholesale, and retail sectors.</li>
+            <li>Architected large-scale database schema and module migrations across major Odoo LTS versions with automated transformation pipelines and zero downtime.</li>
+            <li>Engineered high-performance reporting pipelines and PostgreSQL optimizations capable of processing 1.5M+ records with minimal query latency.</li>
+            <li>Constructed multi-tenant SaaS customizations with isolated databases, tenant-specific logic, and automated sandbox provisioning.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Education -->
+      <div class="edu-card">
+        <div class="bento-header">
+          <div class="bento-icon">🎓</div>
+          <h3 class="bento-title">EDUCATION & FOUNDATIONS</h3>
+        </div>
+        <div class="edu-row">
+          <div>
+            <div style="font-weight: 700; font-size: 1.1rem; color: var(--text);">Bachelor of Technology (B.Tech) in Computer Science & Engineering</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.35rem; line-height: 1.5;">
+              Formal computer science foundation in distributed systems, relational database architecture, algorithms, and object-oriented software engineering.
+            </div>
+          </div>
+          <div>
+            <span class="pixel-pill" style="background: #E8F5E9; border-color: #81C784; color: #2E7D32; font-weight: 700; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+              NSS Unit Head (Leadership)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-banner">
+        <h3 class="cta-title">LOOKING FOR AN EXPERIENCED ODOO ARCHITECT?</h3>
+        <p class="cta-text">
+          Available for discreet architectural advisory, complex business process mapping, custom module engineering, or database optimization.
+        </p>
+        <div class="cta-buttons">
+          <a href="mailto:amalprasad7101@gmail.com" class="cta-btn cta-btn-primary">GET IN TOUCH</a>
+          <a href="https://linkedin.com/in/amal-prasad-0aa32119a" target="_blank" class="cta-btn cta-btn-secondary">LINKEDIN PROFILE</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= THREE.JS SCRIPT ================= -->
+  <script>
+    // --- 1. DOMAIN DATA (6 FACES) ---
+    const faceDomains = [
+      { // 0: Right (Red)
+        face: "Right (Red)",
+        tag: "Micro-Fulfillment",
+        title: "Dark Store Fulfillment Engine",
+        icon: "🏬",
+        desc: "Designed and deployed custom micro-fulfillment dark store workflows, optimizing real-time multi-location stock synchronization, automated threshold replenishment, and rapid batch order-to-dispatch operations.",
+        stack: "Odoo Inventory (WMS), Barcode Scanning, Multi-Warehouse Sync"
+      },
+      { // 1: Left (Orange)
+        face: "Left (Orange)",
+        tag: "Discrete Manufacturing",
+        title: "Textiles & Ceramics MRP",
+        icon: "🏭",
+        desc: "Engineered multi-level Bills of Materials (BOM), work center routings, subcontracting, and scrap analysis workflows for textile apparel and sanitaryware industrial plants.",
+        stack: "Odoo MRP, Quality Checks, Custom Production Costing"
+      },
+      { // 2: Top (White)
+        face: "Top (White)",
+        tag: "Wholesale & Trading",
+        title: "Hardware Distribution Systems",
+        icon: "📦",
+        desc: "Multi-branch wholesale distribution with tiered pricing schedules, supplier lead time tracking, automated warehouse transfers, and high-volume billing pipelines.",
+        stack: "Odoo Sales, Purchase, Inventory, PostgreSQL Query Tuning"
+      },
+      { // 3: Bottom (Yellow)
+        face: "Bottom (Yellow)",
+        tag: "Enterprise SaaS & HR",
+        title: "Multi-Tenant SaaS & Recruitment",
+        icon: "☁️",
+        desc: "Constructed multi-client tenant customizations with isolated databases and built automated recruitment candidate screening pipelines reducing administrative overhead.",
+        stack: "Odoo HR, Recruitment, Multi-Database SaaS Architecture, Python"
+      },
+      { // 4: Front (Green)
+        face: "Front (Green)",
+        tag: "Fleet Management ERP",
+        title: "Fleet Management ERP",
+        icon: "🚚",
+        desc: "Architected end-to-end Fleet ERP managing vehicle lifecycle tracking, fuel consumption logs, maintenance dispatch, driver assignments, and automated expense accounting.",
+        stack: "Odoo Fleet, Financial Accounting, Custom Python ORM"
+      },
+      { // 5: Back (Blue)
+        face: "Back (Blue)",
+        tag: "On-Demand Logistics",
+        title: "Hyperlocal Delivery Engine",
+        icon: "⚡",
+        desc: "High-throughput Odoo backend integration powering hyperlocal on-demand dispatch, dynamic driver allocations, SLA tracking, and dynamic order settlement.",
+        stack: "Odoo Backend, REST APIs, JSON-RPC, PostgreSQL High-Concurrency"
+      }
+    ];
+
+    // Helper to draw procedural canvas textures for center face icons
+    function createIconTexture(iconText, bgColorHex, textColor = '#FFFFFF') {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+
+      // Base background color of that face
+      ctx.fillStyle = bgColorHex;
+      ctx.fillRect(0, 0, 256, 256);
+
+      // Dark voxel badge frame in the center
+      ctx.fillStyle = 'rgba(20, 24, 30, 0.45)';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(40, 40, 176, 176, 32) : ctx.rect(40, 40, 176, 176);
+      ctx.fill();
+
+      // Badge outline
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.stroke();
+
+      // Render the domain icon/emoji
+      ctx.font = '85px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(iconText, 128, 134);
+
+      const texture = new THREE.CanvasTexture(c);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    // --- 2. THREE.JS SCENE SETUP ---
+    const canvas = document.getElementById("webgl-canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xE8E3DA);
+    scene.fog = new THREE.Fog(0xE8E3DA, 30, 75);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 120);
+    camera.position.set(0, 11, 24);
+    camera.lookAt(0, 3, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xFFF7EC, 0.85);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xFFF0D0, 0.95);
+    dirLight.position.set(16, 26, 12);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    scene.add(dirLight);
+
+    // --- 3. MOUNTAINS, CLOUDS & ENVIRONMENT ---
+    function createVoxelMountain(x, z, width, height, color, snowColor) {
+      const mGroup = new THREE.Group();
+      const bodyMat = new THREE.MeshLambertMaterial({ color: color });
+      const snowMat = new THREE.MeshLambertMaterial({ color: snowColor });
+
+      const steps = Math.floor(height / 2);
+      for (let i = 0; i < steps; i++) {
+        const stepWidth = width * (1 - i / steps);
+        const y = i * 2;
+        const mat = i > steps - 3 ? snowMat : bodyMat;
+        const block = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 2, stepWidth * 0.7), mat);
+        block.position.y = y;
+        mGroup.add(block);
+      }
+      mGroup.position.set(x, 0, z);
+      scene.add(mGroup);
+    }
+
+    createVoxelMountain(-25, -28, 30, 20, 0x8C9A8B, 0xFFFFFF);
+    createVoxelMountain(2, -36, 40, 26, 0x7E8B80, 0xFFFFFF);
+    createVoxelMountain(28, -25, 28, 18, 0x93A092, 0xFFFFFF);
+
+    // Clouds
+    const clouds = [];
+    const cloudMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.9 });
+    for (let c = 0; c < 5; c++) {
+      const cGroup = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(8 + Math.random() * 4, 1.2, 4), cloudMat);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(5, 1.2, 3), cloudMat);
+      top.position.set(0, 1.2, 0);
+      cGroup.add(base, top);
+      cGroup.position.set(-30 + c * 18, 16 + Math.random() * 4, -15 - Math.random() * 10);
+      scene.add(cGroup);
+      clouds.push(cGroup);
+    }
+
+    // Ground
+    const groundGeo = new THREE.BoxGeometry(42, 1, 42);
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x86BF54 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.position.y = -0.5;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Stepping stones
+    const stoneMat = new THREE.MeshLambertMaterial({ color: 0xD8D4CB });
+    for (let i = 0; i < 9; i++) {
+      const stone = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 1.2), stoneMat);
+      const angle = (i / 9) * Math.PI * 2;
+      stone.position.set(Math.cos(angle) * 5.2, 0.02, Math.sin(angle) * 5.2);
+      stone.rotation.y = angle;
+      stone.receiveShadow = true;
+      scene.add(stone);
+    }
+
+    // Trees
+    function createVoxelTree(x, z, scale = 1) {
+      const tree = new THREE.Group();
+      const woodMat = new THREE.MeshLambertMaterial({ color: 0x6E4F32 });
+      const leafMat = new THREE.MeshLambertMaterial({ color: 0x477834 });
+
+      const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.2 * scale, 5 * scale, 1.2 * scale), woodMat);
+      trunk.position.y = 2.5 * scale;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      tree.add(trunk);
+
+      const leafLayer1 = new THREE.Mesh(new THREE.BoxGeometry(5 * scale, 2 * scale, 5 * scale), leafMat);
+      leafLayer1.position.y = 4.5 * scale;
+      leafLayer1.castShadow = true;
+      tree.add(leafLayer1);
+
+      const leafLayer2 = new THREE.Mesh(new THREE.BoxGeometry(3.2 * scale, 1.8 * scale, 3.2 * scale), leafMat);
+      leafLayer2.position.y = 6 * scale;
+      leafLayer2.castShadow = true;
+      tree.add(leafLayer2);
+
+      tree.position.set(x, 0, z);
+      scene.add(tree);
+    }
+
+    createVoxelTree(-10.5, -4.5, 1.1);
+    createVoxelTree(10.5, -5.5, 0.95);
+
+    // --- 4. DEVELOPER DESK SETUP ---
+    const deskGroup = new THREE.Group();
+    const woodMat = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+    const metalMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const screenMat = new THREE.MeshBasicMaterial({ color: 0x22C55E });
+    const chairMat = new THREE.MeshLambertMaterial({ color: 0x5C3A21 });
+
+    const tabletop = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.2, 1.8), woodMat);
+    tabletop.position.set(0, 1.8, 0);
+    tabletop.castShadow = true;
+    tabletop.receiveShadow = true;
+    deskGroup.add(tabletop);
+
+    const legGeo = new THREE.BoxGeometry(0.2, 1.8, 0.2);
+    [[-1.4, -0.7], [1.4, -0.7], [-1.4, 0.7], [1.4, 0.7]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(legGeo, metalMat);
+      leg.position.set(lx, 0.9, lz);
+      leg.castShadow = true;
+      deskGroup.add(leg);
+    });
+
+    const monitorStand = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.3), metalMat);
+    monitorStand.position.set(0, 2.0, -0.4);
+    const monitorPole = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, 0.1), metalMat);
+    monitorPole.position.set(0, 2.3, -0.4);
+    const monitorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.12), metalMat);
+    monitorFrame.position.set(0, 2.8, -0.4);
+    const monitorScreen = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.85, 0.05), screenMat);
+    monitorScreen.position.set(0, 2.8, -0.34);
+
+    const keyboard = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.35), metalMat);
+    keyboard.position.set(0, 1.92, 0.15);
+    const mousePad = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.18), metalMat);
+    mousePad.position.set(0.68, 1.92, 0.15);
+
+    deskGroup.add(monitorStand, monitorPole, monitorFrame, monitorScreen, keyboard, mousePad);
+
+    const chairBase = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.15, 1.1), chairMat);
+    chairBase.position.set(0, 1.0, 0.85);
+    const chairBack = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.2, 0.15), chairMat);
+    chairBack.position.set(0, 1.6, 1.35);
+    const chairLeg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.0, 0.2), metalMat);
+    chairLeg.position.set(0, 0.5, 0.85);
+    deskGroup.add(chairBase, chairBack, chairLeg);
+
+    deskGroup.position.set(-6.5, 0, 1.5);
+    deskGroup.rotation.y = Math.PI / 4;
+    scene.add(deskGroup);
+
+    const SEATED_POS = new THREE.Vector3(-5.9, 0, 2.1);
+    const SEATED_ROT = Math.PI / 4;
+
+    // --- 5. RUBIK'S CUBE WITH CENTER ICON BADGES ---
+    const rubiksGroup = new THREE.Group();
+    rubiksGroup.position.set(0, 4.2, 0);
+    scene.add(rubiksGroup);
+
+    const faceHexColors = ['#C41E3A', '#FF5800', '#FFFFFF', '#FFD500', '#009E60', '#0051BA'];
+    const subCubeGeo = new THREE.BoxGeometry(0.94, 0.94, 0.94);
+    const subCubes = [];
+
+    // Pre-create icon textures for the 6 center faces
+    const iconTextures = [
+      createIconTexture(faceDomains[0].icon, faceHexColors[0]), // 0: Right (Red)
+      createIconTexture(faceDomains[1].icon, faceHexColors[1]), // 1: Left (Orange)
+      createIconTexture(faceDomains[2].icon, faceHexColors[2]), // 2: Top (White)
+      createIconTexture(faceDomains[3].icon, faceHexColors[3]), // 3: Bottom (Yellow)
+      createIconTexture(faceDomains[4].icon, faceHexColors[4]), // 4: Front (Green)
+      createIconTexture(faceDomains[5].icon, faceHexColors[5])  // 5: Back (Blue)
+    ];
+
+    for (let x = -1; x <= 1; x++) {
+      for (let y = -1; y <= 1; y++) {
+        for (let z = -1; z <= 1; z++) {
+          const materials = faceHexColors.map((hexColor, idx) => {
+            let isOuter = false;
+            let isCenterPiece = false;
+
+            if (idx === 0 && x === 1) { isOuter = true; if (y === 0 && z === 0) isCenterPiece = true; }
+            if (idx === 1 && x === -1) { isOuter = true; if (y === 0 && z === 0) isCenterPiece = true; }
+            if (idx === 2 && y === 1) { isOuter = true; if (x === 0 && z === 0) isCenterPiece = true; }
+            if (idx === 3 && y === -1) { isOuter = true; if (x === 0 && z === 0) isCenterPiece = true; }
+            if (idx === 4 && z === 1) { isOuter = true; if (x === 0 && y === 0) isCenterPiece = true; }
+            if (idx === 5 && z === -1) { isOuter = true; if (x === 0 && y === 0) isCenterPiece = true; }
+
+            if (!isOuter) {
+              return new THREE.MeshLambertMaterial({ color: 0x1A1A1A });
+            }
+
+            if (isCenterPiece) {
+              return new THREE.MeshLambertMaterial({ map: iconTextures[idx] });
+            }
+
+            return new THREE.MeshLambertMaterial({ color: new THREE.Color(hexColor) });
+          });
+
+          const subCube = new THREE.Mesh(subCubeGeo, materials);
+          subCube.position.set(x * 1.0, y * 1.0, z * 1.0);
+          subCube.castShadow = true;
+          subCube.receiveShadow = true;
+          rubiksGroup.add(subCube);
+          subCubes.push(subCube);
+        }
+      }
+    }
+
+    // --- 6. MINECRAFT CHARACTER ---
+    const character = new THREE.Group();
+    scene.add(character);
+
+    const skinMat = new THREE.MeshLambertMaterial({ color: 0xD9A07A });
+    const shirtMat = new THREE.MeshLambertMaterial({ color: 0x00A8A8 });
+    const pantsMat = new THREE.MeshLambertMaterial({ color: 0x2A3D8F });
+    const hairMat = new THREE.MeshLambertMaterial({ color: 0x4A3319 });
+
+    const headGroup = new THREE.Group();
+    const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), skinMat);
+    headMesh.position.y = 0.45;
+    headMesh.castShadow = true;
+    headGroup.add(headMesh);
+
+    const hairMesh = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.35, 0.94), hairMat);
+    hairMesh.position.y = 0.78;
+    headGroup.add(hairMesh);
+    headGroup.position.y = 2.4;
+    character.add(headGroup);
+
+    const torsoMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.5), shirtMat);
+    torsoMesh.position.y = 1.8;
+    torsoMesh.castShadow = true;
+    character.add(torsoMesh);
+
+    const rightArmGroup = new THREE.Group();
+    rightArmGroup.position.set(0.65, 2.3, 0);
+    const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 0.4), skinMat);
+    rightArm.position.y = -0.55;
+    rightArm.castShadow = true;
+    rightArmGroup.add(rightArm);
+    character.add(rightArmGroup);
+
+    const leftArmGroup = new THREE.Group();
+    leftArmGroup.position.set(-0.65, 2.3, 0);
+    const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 0.4), skinMat);
+    leftArm.position.y = -0.55;
+    leftArm.castShadow = true;
+    leftArmGroup.add(leftArm);
+    character.add(leftArmGroup);
+
+    const rightLegGroup = new THREE.Group();
+    rightLegGroup.position.set(0.25, 1.2, 0);
+    const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.2, 0.42), pantsMat);
+    rightLeg.position.y = -0.6;
+    rightLeg.castShadow = true;
+    rightLegGroup.add(rightLeg);
+    character.add(rightLegGroup);
+
+    const leftLegGroup = new THREE.Group();
+    leftLegGroup.position.set(-0.25, 1.2, 0);
+    const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.2, 0.42), pantsMat);
+    leftLeg.position.y = -0.6;
+    leftLeg.castShadow = true;
+    leftLegGroup.add(leftLeg);
+    character.add(leftLegGroup);
+
+    let charState = 'SEATED';
+    let targetPos = new THREE.Vector3();
+    let punchProgress = 0;
+    let waitTimer = 0;
+    let pendingDomain = null;
+
+    function applySeatedPose() {
+      character.position.copy(SEATED_POS);
+      character.rotation.y = SEATED_ROT;
+      character.position.y = -0.15;
+      rightLegGroup.rotation.x = -Math.PI / 2.2;
+      leftLegGroup.rotation.x = -Math.PI / 2.2;
+      rightArmGroup.rotation.x = -Math.PI / 3;
+      leftArmGroup.rotation.x = -Math.PI / 3;
+    }
+
+    function resetStandPose() {
+      character.position.y = 0;
+      rightLegGroup.rotation.x = 0;
+      leftLegGroup.rotation.x = 0;
+      rightArmGroup.rotation.x = 0;
+      leftArmGroup.rotation.x = 0;
+    }
+
+    applySeatedPose();
+
+    // --- 7. AUTO-DISMISSING DOMAIN CARD (5 SECONDS) ---
+    const cardEl = document.getElementById("domainCard");
+    const cardClose = document.getElementById("cardClose");
+    const cardTimer = document.getElementById("cardTimer");
+    let dismissTimeout = null;
+
+    function hideDomainCard() {
+      cardEl.classList.remove("active");
+      cardTimer.classList.remove("running");
+      if (dismissTimeout) clearTimeout(dismissTimeout);
+    }
+
+    cardClose.addEventListener("click", hideDomainCard);
+
+    function displayDomainCard(domain) {
+      if (dismissTimeout) clearTimeout(dismissTimeout);
+
+      document.getElementById("cardTag").innerText = domain.icon + " " + domain.tag;
+      document.getElementById("cardTitle").innerText = domain.title;
+      document.getElementById("cardDesc").innerText = domain.desc;
+      document.getElementById("cardStack").innerText = domain.stack;
+
+      cardTimer.classList.remove("running");
+      void cardTimer.offsetWidth;
+      cardTimer.classList.add("running");
+
+      cardEl.classList.add("active");
+
+      dismissTimeout = setTimeout(() => {
+        hideDomainCard();
+      }, 5000);
+    }
+
+    // --- 8. USER INTERACTION & RAYCASTING ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    let isDragging = false;
+    let prevMousePos = { x: 0, y: 0 };
+    let clickStartPos = { x: 0, y: 0 };
+
+    window.addEventListener("mousedown", (e) => {
+      if (window.scrollY > 100) return;
+      isDragging = true;
+      prevMousePos = { x: e.clientX, y: e.clientY };
+      clickStartPos = { x: e.clientX, y: e.clientY };
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - prevMousePos.x;
+        const deltaY = e.clientY - prevMousePos.y;
+        rubiksGroup.rotation.y += deltaX * 0.008;
+        rubiksGroup.rotation.x += deltaY * 0.008;
+        prevMousePos = { x: e.clientX, y: e.clientY };
+      }
+    });
+
+    window.addEventListener("mouseup", (e) => {
+      isDragging = false;
+      const dist = Math.hypot(e.clientX - clickStartPos.x, e.clientY - clickStartPos.y);
+      if (dist < 6 && window.scrollY < 100) {
+        handleSceneClick(e);
+      }
+    });
+
+    function handleSceneClick(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(subCubes);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0];
+        const normalMatrix = new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld);
+        const worldNormal = hit.face.normal.clone().applyMatrix3(normalMatrix).normalize();
+
+        let faceIndex = 0;
+        const absX = Math.abs(worldNormal.x);
+        const absY = Math.abs(worldNormal.y);
+        const absZ = Math.abs(worldNormal.z);
+
+        if (absX > absY && absX > absZ) faceIndex = worldNormal.x > 0 ? 0 : 1;
+        else if (absY > absX && absY > absZ) faceIndex = worldNormal.y > 0 ? 2 : 3;
+        else faceIndex = worldNormal.z > 0 ? 4 : 5;
+
+        dispatchJohnToCube(worldNormal, faceDomains[faceIndex]);
+      }
+    }
+
+    function dispatchJohnToCube(normal, domain) {
+      resetStandPose();
+      const standDistance = 4.2;
+      targetPos.set(normal.x * standDistance, 0, normal.z * standDistance);
+      if (Math.abs(normal.y) > 0.7) {
+        targetPos.set(2.8, 0, 3.2);
+      }
+      pendingDomain = domain;
+      charState = 'WALKING_TO_CUBE';
+    }
+
+    // --- 9. ANIMATION LOOP ---
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      // Cloud drift
+      clouds.forEach((cloud) => {
+        cloud.position.x += 1.2 * dt;
+        if (cloud.position.x > 35) cloud.position.x = -35;
+      });
+
+      // Gentle floating animation for Rubik's cube when idle
+      if (!isDragging) {
+        rubiksGroup.position.y = 4.2 + Math.sin(time * 1.5) * 0.12;
+      }
+
+      // John State Machine Logic
+      if (charState === 'WALKING_TO_CUBE') {
+        const dir = new THREE.Vector3().subVectors(targetPos, character.position);
+        dir.y = 0;
+        const dist = dir.length();
+
+        if (dist > 0.25) {
+          dir.normalize();
+          character.position.addScaledVector(dir, 6.0 * dt);
+          character.rotation.y = Math.atan2(dir.x, dir.z);
+
+          const walkCycle = Math.sin(time * 14);
+          rightArmGroup.rotation.x = walkCycle * 0.75;
+          leftArmGroup.rotation.x = -walkCycle * 0.75;
+          rightLegGroup.rotation.x = -walkCycle * 0.75;
+          leftLegGroup.rotation.x = walkCycle * 0.75;
+        } else {
+          character.position.copy(targetPos);
+          character.lookAt(0, 0, 0);
+          rightLegGroup.rotation.x = 0;
+          leftLegGroup.rotation.x = 0;
+          charState = 'PUNCHING';
+          punchProgress = 0;
+        }
+      }
+      else if (charState === 'PUNCHING') {
+        punchProgress += dt * 8;
+        const swing = Math.sin(punchProgress);
+        rightArmGroup.rotation.x = -swing * 1.5;
+
+        if (punchProgress >= Math.PI) {
+          rightArmGroup.rotation.x = 0;
+          if (pendingDomain) {
+            displayDomainCard(pendingDomain);
+            pendingDomain = null;
+          }
+          charState = 'WAITING_AT_CUBE';
+          waitTimer = 1.0;
+        }
+      }
+      else if (charState === 'WAITING_AT_CUBE') {
+        waitTimer -= dt;
+        if (waitTimer <= 0) {
+          targetPos.copy(SEATED_POS);
+          charState = 'WALKING_TO_DESK';
+        }
+      }
+      else if (charState === 'WALKING_TO_DESK') {
+        const dir = new THREE.Vector3().subVectors(targetPos, character.position);
+        dir.y = 0;
+        const dist = dir.length();
+
+        if (dist > 0.25) {
+          dir.normalize();
+          character.position.addScaledVector(dir, 5.5 * dt);
+          character.rotation.y = Math.atan2(dir.x, dir.z);
+
+          const walkCycle = Math.sin(time * 14);
+          rightArmGroup.rotation.x = walkCycle * 0.75;
+          leftArmGroup.rotation.x = -walkCycle * 0.75;
+          rightLegGroup.rotation.x = -walkCycle * 0.75;
+          leftLegGroup.rotation.x = walkCycle * 0.75;
+        } else {
+          applySeatedPose();
+          charState = 'SEATED';
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
